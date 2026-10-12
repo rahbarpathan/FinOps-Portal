@@ -1,0 +1,27 @@
+============================================================
+CYBERDYNE SYSTEMS INCORPORATED
+DEFENSE & AUTOMATION DIVISION
+============================================================
+Billing Statement & Commercial Invoice
+Ref Code: CD-9042-X
+Date Issued: 12th November 2024
+Payment Terms: Net 30 Days
+Due Date: December 12, 2024
+
+Client: Enterprise FinOps Operations
+
+STATEMENT SUMMARY:
+------------------------------------------------------------
+Item 1: Neural Network Coprocessor Cluster (Q4 Maintenance)
+Quantity: 1
+Unit Cost: $14,500.00 USD
+Tax / Surcharge: Included
+
+TOTAL AMOUNT DUE: $14,500.00 USD
+(Fourteen Thousand Five Hundred US Dollars)
+
+REMITTANCE NOTES:
+Please remit within standard payment window. Invoices over
+$10,000 require manual sign-off from VP Finance.
+Bank Wire: CYBER-FED-990-2184
+============================================================

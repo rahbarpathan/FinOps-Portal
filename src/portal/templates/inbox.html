@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Vendor Inbox{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Vendor Accounts Inbox</h1>
+        <p class="page-subtitle">Incoming billing correspondence and attached invoice statements from suppliers.</p>
+    </div>
+    <div>
+        <span class="badge badge-info">{{ emails|length }} Messages Received</span>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; gap: 1rem; align-items: center;">
+        <input type="text" id="email-search" class="form-control" placeholder="Search by vendor (e.g. Acme Corp) or subject..." onkeyup="filterEmails()">
+        <select id="vendor-filter" class="form-control" style="max-width: 200px;" onchange="filterEmails()">
+            <option value="">All Vendors</option>
+            <option value="Acme Corp">Acme Corp</option>
+            <option value="Cyberdyne Systems">Cyberdyne Systems</option>
+            <option value="Globex Corp">Globex Corp</option>
+        </select>
+    </div>
+</div>
+
+<div class="table-container">
+    <table id="inbox-table">
+        <thead>
+            <tr>
+                <th>Vendor</th>
+                <th>Subject</th>
+                <th>Received Date</th>
+                <th>Attached Invoice</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="inbox-tbody">
+            {% for email in emails %}
+            <tr class="email-row" data-vendor="{{ email.vendor }}" id="email-row-{{ email.id }}">
+                <td>
+                    <strong>{{ email.vendor }}</strong>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">{{ email.sender }}</div>
+                </td>
+                <td>
+                    <div style="font-weight: 600;">{{ email.subject }}</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); max-width: 420px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        {{ email.body }}
+                    </div>
+                </td>
+                <td>
+                    <span class="badge badge-pending">{{ email.received_date }}</span>
+                </td>
+                <td>
+                    <a href="/inbox/attachment/{{ email.id }}" 
+                       class="btn btn-secondary btn-sm attachment-link" 
+                       id="attachment-btn-{{ email.id }}"
+                       data-invoice="{{ email.invoice_number }}"
+                       data-date="{{ email.invoice_date }}">
+                        📎 {{ email.attachment_name }}
+                    </a>
+                    {% if email.is_messy %}
+                        <span class="badge badge-warning" title="Contains messy formatting">Messy Format</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/inbox/attachment/{{ email.id }}" class="btn btn-primary btn-sm view-email-btn" id="view-btn-{{ email.id }}">
+                        Inspect
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function filterEmails() {
+        const query = document.getElementById('email-search').value.toLowerCase();
+        const vendor = document.getElementById('vendor-filter').value.toLowerCase();
+        const rows = document.querySelectorAll('.email-row');
+        
+        rows.forEach(row => {
+            const rowVendor = row.getAttribute('data-vendor').toLowerCase();
+            const text = row.innerText.toLowerCase();
+            const matchQuery = text.includes(query);
+            const matchVendor = !vendor || rowVendor === vendor;
+            row.style.display = (matchQuery && matchVendor) ? '' : 'none';
+        });
+    }
+</script>
+{% endblock %}

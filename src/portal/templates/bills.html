@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Internal Finance System - Bills{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Internal Accounts Payable &amp; Bills</h1>
+        <p class="page-subtitle">Official general ledger of payable liabilities awaiting disbursement.</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="/bills/create" class="btn btn-primary" id="btn-create-new-bill">
+            ➕ Create New Bill
+        </a>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; gap: 1rem; align-items: center; flex: 1;">
+            <input type="text" id="bill-search" class="form-control" placeholder="Search bills by vendor, invoice number, or status..." onkeyup="filterBills()">
+        </div>
+        <div>
+            <span class="badge badge-info" id="total-bills-count">{{ bills|length }} Total Recorded Bills</span>
+        </div>
+    </div>
+</div>
+
+<div class="table-container">
+    <table id="bills-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Vendor</th>
+                <th>Invoice #</th>
+                <th>Amount</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Created At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="bills-tbody">
+            {% for bill in bills %}
+            <tr class="bill-row" id="bill-row-{{ bill.id }}" data-invoice="{{ bill.invoice_number }}">
+                <td>#{{ bill.id }}</td>
+                <td><strong>{{ bill.vendor }}</strong></td>
+                <td><code class="bill-invoice-code">{{ bill.invoice_number }}</code></td>
+                <td><strong style="color: var(--accent-emerald);">${{ "%.2f"|format(bill.amount) }}</strong></td>
+                <td>{{ bill.due_date }}</td>
+                <td>
+                    {% if bill.status == 'Approved' %}
+                        <span class="badge badge-approved" id="status-badge-{{ bill.id }}">{{ bill.status }}</span>
+                    {% elif bill.status == 'Paid' %}
+                        <span class="badge badge-paid" id="status-badge-{{ bill.id }}">{{ bill.status }}</span>
+                    {% else %}
+                        <span class="badge badge-pending" id="status-badge-{{ bill.id }}">{{ bill.status }}</span>
+                    {% endif %}
+                </td>
+                <td style="color: var(--text-muted); font-size: 0.85rem;">{{ bill.created_at }}</td>
+                <td>
+                    <a href="/bills/{{ bill.id }}" class="btn btn-secondary btn-sm" id="view-bill-{{ bill.id }}">
+                        View
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    No bills recorded yet. Use the Create Bill form or let the AI Worker submit one.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function filterBills() {
+        const query = document.getElementById('bill-search').value.toLowerCase();
+        const rows = document.querySelectorAll('.bill-row');
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    }
+</script>
+{% endblock %}
