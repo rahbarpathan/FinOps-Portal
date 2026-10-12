@@ -1,8 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
-from src.portal.app import app
-from src.portal.seed import seed_database
-from src.portal.db import get_connection
+from env.app import app
+from env.seed import seed_database
+from env.db import get_connection
 
 client = TestClient(app)
 
@@ -28,7 +28,7 @@ def test_attachment_view():
     assert "2024-05-10" in res.text
 
 def test_messy_invoice_attachment():
-    res = client.get("/inbox/attachment/4")
+    res = client.get("/inbox/attachment/5")
     assert res.status_code == 200
     assert "CD-9042-X" in res.text
     assert "$14,500.00 USD" in res.text

@@ -1,8 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
-from src.portal.app import app
-from src.portal.seed import seed_database
-from src.portal.db import set_config
+from env.app import app
+from env.seed import seed_database
+from env.db import set_config
 
 client = TestClient(app)
 
