@@ -3,31 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}FinOps Portal{% endblock %} - CentrAlign AI</title>
+    <title>{% block title %}FinOps Portal{% endblock %} — CentrAlign</title>
     <link rel="stylesheet" href="/static/style.css">
     {% block head %}{% endblock %}
 </head>
 <body>
     <nav class="navbar">
         <a href="/inbox" class="nav-brand">
-            <span class="brand-badge">Enterprise</span>
-            <span>FinOps Portal</span>
+            <span class="brand-badge">FinOps</span>
+            <span>Enterprise Portal</span>
         </a>
         <div class="nav-links">
             <a href="/inbox" class="nav-link {% if active_page == 'inbox' %}active{% endif %}" id="nav-inbox">
-                📧 Vendor Inbox
+                Vendor Inbox
             </a>
             <a href="/bills" class="nav-link {% if active_page == 'bills' %}active{% endif %}" id="nav-bills">
-                💰 Finance System
+                Finance System
             </a>
             <a href="/bills/create" class="nav-link {% if active_page == 'create_bill' %}active{% endif %}" id="nav-create-bill">
-                ➕ Create Bill
+                Create Bill
             </a>
             <a href="/agent" class="nav-link highlight {% if active_page == 'agent' %}active{% endif %}" id="nav-agent">
-                🤖 Agent Cockpit
+                Agent Cockpit
             </a>
             <button onclick="resetData()" class="btn btn-secondary btn-sm" id="reset-system-btn" title="Deterministic Reset">
-                🔄 Reset State
+                Reset State
             </button>
         </div>
     </nav>
@@ -37,7 +37,7 @@
     </main>
 
     <footer>
-        <p>CentrAlign AI — Autonomous AI Task Worker &amp; FinOps Mock Environment | Ground-Truth Isolated</p>
+        <p>CentrAlign — Autonomous AI Task Worker &amp; FinOps Portal &bull; Isolated Verification Environment</p>
     </footer>
 
     <script>

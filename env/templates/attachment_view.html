@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Invoice Attachment - {{ email.invoice_number }}{% endblock %}
+{% block title %}Attachment — {{ email.invoice_number }}{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
         <a href="/inbox" class="btn btn-secondary btn-sm" style="margin-bottom: 0.5rem;" id="back-to-inbox-btn">← Back to Inbox</a>
         <h1 class="page-title">Invoice Attachment Preview</h1>
-        <p class="page-subtitle">File: <code>{{ email.attachment_name }}</code> attached to email from <strong>{{ email.vendor }}</strong></p>
+        <p class="page-subtitle">File: <code style="font-family: var(--font-mono);">{{ email.attachment_name }}</code> attached to email from <strong>{{ email.vendor }}</strong></p>
     </div>
     <div style="display: flex; gap: 0.5rem;">
         <a href="/bills/create?vendor={{ email.vendor }}&invoice={{ email.invoice_number }}" class="btn btn-primary" id="fill-bill-btn">
@@ -38,11 +38,11 @@
             </div>
             <div>
                 <span class="fact-key">Total Amount (Raw Statement)</span>
-                <div class="fact-value" id="meta-amount" style="color: var(--accent-emerald); font-size: 1.25rem;">{{ email.raw_amount }}</div>
+                <div class="fact-value" id="meta-amount" style="font-size: 1.125rem;">{{ email.raw_amount }}</div>
             </div>
             {% if email.is_messy %}
-            <div class="alert alert-error" style="margin-top: 1rem;" id="messy-warning-box">
-                ⚠️ Notice: This invoice contains non-standard text formatting (e.g. currency string and non-ISO date). The Finance System strictly requires numeric amount and YYYY-MM-DD due date.
+            <div class="alert alert-error" style="margin-top: 0.75rem;" id="messy-warning-box">
+                Notice: This invoice contains non-standard text formatting (e.g. currency string and non-ISO date). The Finance System strictly requires numeric amount and YYYY-MM-DD due date.
             </div>
             {% endif %}
         </div>
@@ -50,7 +50,7 @@
 
     <div class="card">
         <h2 class="card-title">Raw Attachment Content</h2>
-        <div class="code-box" style="max-height: 400px; overflow-y: auto; white-space: pre-wrap;" id="raw-attachment-text">
+        <div class="code-box" style="max-height: 380px; overflow-y: auto; white-space: pre-wrap;" id="raw-attachment-text">
 {{ raw_content }}
         </div>
     </div>

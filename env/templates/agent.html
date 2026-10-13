@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Autonomous AI Task Worker - Live Cockpit{% endblock %}
+{% block title %}Autonomous Task Worker — Live Cockpit{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
         <h1 class="page-title">Autonomous AI Task Worker</h1>
-        <p class="page-subtitle">Real-time LLM ReAct agent operating a live browser, recovering from errors, and verifying outcomes.</p>
+        <p class="page-subtitle">Real-time ReAct agent operating a live browser, recovering from faults, and verifying outcomes.</p>
     </div>
     <div style="display: flex; gap: 0.5rem; align-items: center;">
         <span class="badge badge-info" id="agent-status-badge">Ready for Task</span>
@@ -16,14 +16,14 @@
 <!-- Task Input & Preset Demonstrations -->
 <div class="card">
     <div class="card-title">
-        <span>🎯 Mission Objective</span>
-        <div style="font-size: 0.85rem; font-weight: normal; color: var(--text-muted);">
-            Runtime autonomous decision loop • Native tool calling
+        <span>Task Objective</span>
+        <div style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">
+            Runtime autonomous decision loop &bull; Native tool calling
         </div>
     </div>
 
-    <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 320px;">
+    <div style="display: flex; gap: 0.75rem; margin-bottom: 0.875rem; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 300px;">
             <input type="text" id="task-input" class="form-control" 
                    value="Find the latest invoice from Acme Corp, create a bill in our internal finance system, and confirm."
                    placeholder="Enter any natural language task...">
@@ -39,19 +39,19 @@
         </div>
         <div>
             <button class="btn btn-primary" id="start-task-btn" onclick="runAgentTask()">
-                ▶ Launch Agent
+                Launch Agent
             </button>
         </div>
     </div>
 
     <!-- Quick Scenario Presets -->
-    <div style="border-top: 1px solid var(--border); padding-top: 0.85rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-        <span style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Hiring Scenarios:</span>
+    <div style="border-top: 1px solid var(--border); padding-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+        <span style="font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Preset Scenarios:</span>
         <button class="btn btn-secondary btn-sm" onclick="setPresetTask(1)" id="preset-1">
             1. Acme Corp (Compare Dates &amp; Find Latest)
         </button>
         <button class="btn btn-secondary btn-sm" onclick="setPresetTask(2)" id="preset-2">
-            2. Cyberdyne (Messy Formats &amp; Human Approval >$10k)
+            2. Cyberdyne (Messy Formats &amp; Policy Approval)
         </button>
         <button class="btn btn-secondary btn-sm" onclick="setPresetTask(3)" id="preset-3">
             3. Chaos Recovery (500 Error Retry)
@@ -62,26 +62,26 @@
     </div>
 </div>
 
-<!-- Human Approval Modal / Banner (Appears when Agent requests human input) -->
-<div id="human-approval-card" class="card" style="display: none; border: 2px solid var(--accent-amber); background: rgba(245, 158, 11, 0.08);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-        <strong style="color: var(--accent-amber); font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
-            ✋ Human-in-the-Loop Policy Checkpoint
+<!-- Human Approval Modal / Banner -->
+<div id="human-approval-card" class="card" style="display: none; border: 1px solid var(--warning-border); background: var(--warning-bg);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.625rem;">
+        <strong style="color: var(--warning); font-size: 0.9375rem;">
+            Human Authorization Required
         </strong>
         <span class="badge badge-warning">Action Gated</span>
     </div>
-    <p id="approval-reason-text" style="font-size: 0.95rem; margin-bottom: 0.75rem;">
-        The agent has detected a high-value or policy-sensitive transaction that requires explicit human authorization.
+    <p id="approval-reason-text" style="font-size: 0.8125rem; color: var(--text-primary); margin-bottom: 0.625rem;">
+        The agent has detected a sensitive transaction requiring explicit human authorization.
     </p>
-    <div class="code-box" id="approval-details-box" style="margin-bottom: 1rem;">
+    <div class="code-box" id="approval-details-box" style="margin-bottom: 0.875rem;">
         <!-- Filled dynamically -->
     </div>
-    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+    <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
         <button class="btn btn-danger btn-sm" onclick="respondApproval(false)" id="approval-reject-btn">
-            ✕ Reject Action
+            Reject Action
         </button>
         <button class="btn btn-success btn-sm" onclick="respondApproval(true)" id="approval-confirm-btn">
-            ✓ Grant Approval
+            Grant Approval
         </button>
     </div>
 </div>
@@ -91,44 +91,44 @@
     <!-- Left Column: Live Steps Feed -->
     <div class="card">
         <div class="card-title">
-            <span>📡 Live Execution Stream</span>
+            <span>Execution Stream</span>
             <span class="badge badge-info" id="step-counter">0 Steps</span>
         </div>
         <div class="feed-container" id="feed-container">
-            <div style="color: var(--text-muted); font-size: 0.9rem; text-align: center; margin-top: 5rem;">
+            <div style="color: var(--text-muted); font-size: 0.8125rem; text-align: center; margin-top: 4rem;">
                 No agent execution active. Click "Launch Agent" to start runtime reasoning.
             </div>
         </div>
     </div>
 
     <!-- Right Column: Working Memory & Independent Verification -->
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
         <!-- Working Memory Facts -->
         <div class="card">
             <div class="card-title">
-                <span>🧠 Working Memory &amp; Discovered Facts</span>
+                <span>Working Memory</span>
                 <span class="badge badge-info" id="facts-count">0 Facts</span>
             </div>
             <div id="facts-container" class="fact-grid">
-                <div style="color: var(--text-muted); font-size: 0.85rem;">Memory empty. Facts will populate as the agent explores.</div>
+                <div style="color: var(--text-muted); font-size: 0.8125rem;">Memory empty. Extracted facts will appear here.</div>
             </div>
         </div>
 
         <!-- Independent Outcome Verifier -->
         <div class="card">
             <div class="card-title">
-                <span>🛡️ Independent Verification (Ground Truth)</span>
+                <span>Independent Verification</span>
                 <span class="badge" id="verification-status-badge">Unverified</span>
             </div>
-            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
-                Ground-truth state is isolated from the agent's acting loop. This verification runs independently against the system ledger.
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                Ground-truth state is isolated from the agent's acting loop. Verification runs independently against the system ledger.
             </p>
-            <div id="verification-report-box" style="background: #090d16; border: 1px solid var(--border); border-radius: 6px; padding: 1rem; min-height: 120px; font-size: 0.85rem; color: var(--text-secondary);">
+            <div id="verification-report-box" style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; min-height: 100px; font-size: 0.8125rem; color: var(--text-secondary);">
                 Awaiting task completion for independent audit checks...
             </div>
-            <div id="evidence-screenshot-box" style="margin-top: 1rem; display: none;">
+            <div id="evidence-screenshot-box" style="margin-top: 0.75rem; display: none;">
                 <span class="fact-key">Screenshot Evidence</span>
-                <div style="margin-top: 0.5rem; border-radius: 6px; overflow: hidden; border: 1px solid var(--border);">
+                <div style="margin-top: 0.35rem; border-radius: 6px; overflow: hidden; border: 1px solid var(--border);">
                     <img id="evidence-img" src="" alt="Proof Screenshot" style="width: 100%; height: auto; display: block;">
                 </div>
             </div>

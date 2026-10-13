@@ -1,34 +1,34 @@
 {% extends "base.html" %}
 
-{% block title %}Bill #{{ bill.id }} - {{ bill.vendor }}{% endblock %}
+{% block title %}Bill #{{ bill.id }} — {{ bill.vendor }}{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
         <a href="/bills" class="btn btn-secondary btn-sm" style="margin-bottom: 0.5rem;" id="back-to-bills-btn">← Back to Bills</a>
         <h1 class="page-title">Bill Detail #{{ bill.id }}</h1>
-        <p class="page-subtitle">Recorded payable liability for <strong>{{ bill.vendor }}</strong></p>
+        <p class="page-subtitle">Payable liability record for <strong>{{ bill.vendor }}</strong></p>
     </div>
     <div style="display: flex; gap: 0.5rem;">
         {% if bill.status == 'Pending' %}
             <form action="/bills/{{ bill.id }}/status" method="POST" style="display:inline;">
                 <input type="hidden" name="status" value="Approved">
-                <button type="submit" class="btn btn-success" id="approve-bill-btn">✓ Approve Bill</button>
+                <button type="submit" class="btn btn-success" id="approve-bill-btn">Approve Bill</button>
             </form>
         {% elif bill.status == 'Approved' %}
             <form action="/bills/{{ bill.id }}/status" method="POST" style="display:inline;">
                 <input type="hidden" name="status" value="Paid">
-                <button type="submit" class="btn btn-primary" id="pay-bill-btn">💳 Mark as Paid</button>
+                <button type="submit" class="btn btn-primary" id="pay-bill-btn">Mark as Paid</button>
             </form>
         {% endif %}
     </div>
 </div>
 
-<div class="card" style="max-width: 800px; margin: 0 auto;">
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+<div class="card" style="max-width: 760px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.25rem;">
         <div>
             <span class="fact-key">Status</span>
-            <div>
+            <div style="margin-top: 0.25rem;">
                 {% if bill.status == 'Approved' %}
                     <span class="badge badge-approved" id="bill-detail-status">{{ bill.status }}</span>
                 {% elif bill.status == 'Paid' %}
@@ -38,30 +38,30 @@
                 {% endif %}
             </div>
         </div>
-        <div>
+        <div style="text-align: right;">
             <span class="fact-key">Total Payable</span>
-            <div style="font-size: 1.75rem; font-weight: 700; color: var(--accent-emerald);" id="bill-detail-amount">
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums;" id="bill-detail-amount">
                 ${{ "%.2f"|format(bill.amount) }}
             </div>
         </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
         <div>
             <span class="fact-key">Vendor Entity</span>
-            <div style="font-size: 1.1rem; font-weight: 600;" id="bill-detail-vendor">{{ bill.vendor }}</div>
+            <div style="font-size: 1rem; font-weight: 600; margin-top: 0.2rem;" id="bill-detail-vendor">{{ bill.vendor }}</div>
         </div>
         <div>
             <span class="fact-key">Invoice Number</span>
-            <div style="font-size: 1.1rem; font-weight: 600;"><code id="bill-detail-invoice">{{ bill.invoice_number }}</code></div>
+            <div style="font-size: 1rem; font-weight: 600; margin-top: 0.2rem;"><code style="font-family: var(--font-mono);" id="bill-detail-invoice">{{ bill.invoice_number }}</code></div>
         </div>
         <div>
-            <span class="fact-key">Maturity / Due Date</span>
-            <div style="font-size: 1rem;" id="bill-detail-due-date">{{ bill.due_date }}</div>
+            <span class="fact-key">Due Date</span>
+            <div style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.2rem;" id="bill-detail-due-date">{{ bill.due_date }}</div>
         </div>
         <div>
-            <span class="fact-key">Created Timestamp</span>
-            <div style="font-size: 0.9rem; color: var(--text-muted);" id="bill-detail-created-at">{{ bill.created_at }}</div>
+            <span class="fact-key">Recorded Timestamp</span>
+            <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.2rem;" id="bill-detail-created-at">{{ bill.created_at }}</div>
         </div>
     </div>
 

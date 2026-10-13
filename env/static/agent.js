@@ -40,11 +40,11 @@ async function runAgentTask() {
     const screenshotBox = document.getElementById('evidence-screenshot-box');
 
     btn.disabled = true;
-    btn.innerText = "⏳ Running...";
+    btn.innerText = "Running...";
     badge.className = "badge badge-pending";
-    badge.innerText = "Agent Thinking & Acting...";
+    badge.innerText = "Agent Active";
     feed.innerHTML = "";
-    factsContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">Listening for extracted facts...</div>';
+    factsContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.8125rem;">Listening for extracted facts...</div>';
     vBox.innerHTML = "Task running. Verification audit will execute once agent finishes.";
     vBadge.className = "badge";
     vBadge.innerText = "Pending";
@@ -64,7 +64,7 @@ async function runAgentTask() {
         listenToStream(currentRunId);
     } catch (e) {
         btn.disabled = false;
-        btn.innerText = "▶ Launch Agent";
+        btn.innerText = "Launch Agent";
         badge.className = "badge badge-warning";
         badge.innerText = "Launch Failed";
         alert("Failed to start agent: " + e.message);
@@ -83,7 +83,7 @@ function listenToStream(runId) {
     eventSource.onerror = () => {
         eventSource.close();
         document.getElementById('start-task-btn').disabled = false;
-        document.getElementById('start-task-btn').innerText = "▶ Launch Agent";
+        document.getElementById('start-task-btn').innerText = "Launch Agent";
     };
 }
 
@@ -99,16 +99,9 @@ function handleAgentMessage(msg) {
         const phaseClass = (msg.phase || 'thought').toLowerCase();
         item.className = `feed-item ${phaseClass}`;
 
-        let icon = "💡";
-        if (msg.phase === 'ACTION') icon = "⚡";
-        if (msg.phase === 'OBSERVATION') icon = "👁️";
-        if (msg.phase === 'RECOVERY') icon = "🛠️";
-        if (msg.phase === 'HUMAN') icon = "✋";
-        if (msg.phase === 'VERIFICATION') icon = "🛡️";
-
         item.innerHTML = `
             <div class="feed-header">
-                <span class="feed-title">${icon} Step ${msg.step_number}: ${msg.phase}</span>
+                <span class="feed-title">Step ${msg.step_number} &bull; ${msg.phase}</span>
                 <span>${msg.timestamp || new Date().toLocaleTimeString()}</span>
             </div>
             <div class="feed-body">${escapeHtml(msg.text || '')}</div>
@@ -126,14 +119,14 @@ function handleAgentMessage(msg) {
     else if (msg.type === 'completed') {
         eventSource.close();
         document.getElementById('start-task-btn').disabled = false;
-        document.getElementById('start-task-btn').innerText = "▶ Launch Agent";
+        document.getElementById('start-task-btn').innerText = "Launch Agent";
         
         if (msg.success) {
             badge.className = "badge badge-approved";
-            badge.innerText = "Task Completed ✓";
+            badge.innerText = "Task Completed";
         } else {
             badge.className = "badge badge-warning";
-            badge.innerText = "Task Failed / Stopped";
+            badge.innerText = "Task Stopped";
         }
         
         if (msg.verification) {
@@ -148,7 +141,7 @@ function renderFacts(facts) {
     document.getElementById('facts-count').innerText = `${keys.length} Facts`;
 
     if (keys.length === 0) {
-        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">Memory empty.</div>';
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.8125rem;">Memory empty.</div>';
         return;
     }
 
@@ -165,7 +158,7 @@ function showApprovalRequest(req) {
     const reasonText = document.getElementById('approval-reason-text');
     const detailsBox = document.getElementById('approval-details-box');
     
-    reasonText.innerText = req.reason || "High value or high-risk transaction requires authorization.";
+    reasonText.innerText = req.reason || "Action requires authorization.";
     detailsBox.innerText = JSON.stringify(req.details || req, null, 2);
     card.style.display = 'block';
     card.scrollIntoView({ behavior: 'smooth' });
@@ -194,24 +187,24 @@ function renderVerification(v) {
 
     if (v.is_verified) {
         vBadge.className = "badge badge-approved";
-        vBadge.innerText = "VERIFIED PASS ✓";
+        vBadge.innerText = "VERIFIED";
     } else {
         vBadge.className = "badge badge-warning";
-        vBadge.innerText = "VERIFICATION FAILED ✕";
+        vBadge.innerText = "FAILED";
     }
 
     let html = `
-        <div style="font-weight: 600; color: ${v.is_verified ? 'var(--accent-emerald)' : 'var(--accent-rose)'}; margin-bottom: 0.75rem;">
+        <div style="font-weight: 600; color: ${v.is_verified ? 'var(--success)' : 'var(--danger)'}; margin-bottom: 0.625rem;">
             ${v.summary || (v.is_verified ? 'All verification criteria confirmed independently.' : 'Verification checks failed.')}
         </div>
-        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <div style="display: flex; flex-direction: column; gap: 0.35rem;">
     `;
 
     (v.checks || []).forEach(c => {
         html += `
-            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 0.25rem;">
-                <span>${c.passed ? '✅' : '❌'} ${escapeHtml(c.criterion)}</span>
-                <span style="color: ${c.passed ? 'var(--accent-emerald)' : 'var(--accent-rose)'}; font-weight: 600;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem;">
+                <span style="font-weight: 500;">${c.passed ? '[PASS]' : '[FAIL]'} ${escapeHtml(c.criterion)}</span>
+                <span style="color: ${c.passed ? 'var(--success)' : 'var(--danger)'}; font-weight: 600;">
                     ${c.passed ? 'PASSED' : 'FAILED'}
                 </span>
             </div>
@@ -223,8 +216,8 @@ function renderVerification(v) {
 
     html += `
         </div>
-        <div style="margin-top: 0.75rem; font-size: 0.75rem; color: var(--text-muted);">
-            Audit Hash: <code>${v.audit_hash || 'SHA256-OK'}</code> • Source: Isolated DB State Query
+        <div style="margin-top: 0.625rem; font-size: 0.75rem; color: var(--text-muted);">
+            Audit Hash: <code>${v.audit_hash || 'SHA256-OK'}</code> &bull; Source: Isolated DB State Query
         </div>
     `;
 

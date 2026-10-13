@@ -9,13 +9,13 @@
         <p class="page-subtitle">Incoming billing correspondence and attached invoice statements from suppliers.</p>
     </div>
     <div>
-        <span class="badge badge-info">{{ emails|length }} Messages Received</span>
+        <span class="badge badge-info">{{ emails|length }} Messages</span>
     </div>
 </div>
 
-<div class="card" style="margin-bottom: 1.5rem;">
-    <div style="display: flex; gap: 1rem; align-items: center;">
-        <input type="text" id="email-search" class="form-control" placeholder="Search by vendor (e.g. Acme Corp) or subject..." onkeyup="filterEmails()">
+<div class="card" style="margin-bottom: 1.25rem;">
+    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+        <input type="text" id="email-search" class="form-control" style="flex: 1; min-width: 240px;" placeholder="Search vendor (e.g. Acme Corp) or subject..." onkeyup="filterEmails()">
         <select id="vendor-filter" class="form-control" style="max-width: 200px;" onchange="filterEmails()">
             <option value="">All Vendors</option>
             <option value="Acme Corp">Acme Corp</option>
@@ -31,41 +31,43 @@
             <tr>
                 <th>Vendor</th>
                 <th>Subject</th>
-                <th>Received Date</th>
-                <th>Attached Invoice</th>
-                <th>Actions</th>
+                <th>Received</th>
+                <th>Attachment</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody id="inbox-tbody">
             {% for email in emails %}
             <tr class="email-row" data-vendor="{{ email.vendor }}" id="email-row-{{ email.id }}">
                 <td>
-                    <strong>{{ email.vendor }}</strong>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">{{ email.sender }}</div>
+                    <div style="font-weight: 600;">{{ email.vendor }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ email.sender }}</div>
                 </td>
                 <td>
-                    <div style="font-weight: 600;">{{ email.subject }}</div>
-                    <div style="font-size: 0.85rem; color: var(--text-secondary); max-width: 420px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <div style="font-weight: 500;">{{ email.subject }}</div>
+                    <div style="font-size: 0.8125rem; color: var(--text-secondary); max-width: 440px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                         {{ email.body }}
                     </div>
                 </td>
-                <td>
-                    <span class="badge badge-pending">{{ email.received_date }}</span>
+                <td style="color: var(--text-secondary); font-size: 0.8125rem;">
+                    {{ email.received_date }}
                 </td>
                 <td>
-                    <a href="/inbox/attachment/{{ email.id }}" 
-                       class="btn btn-secondary btn-sm attachment-link" 
-                       id="attachment-btn-{{ email.id }}"
-                       data-invoice="{{ email.invoice_number }}"
-                       data-date="{{ email.invoice_date }}">
-                        📎 {{ email.attachment_name }}
-                    </a>
-                    {% if email.is_messy %}
-                        <span class="badge badge-warning" title="Contains messy formatting">Messy Format</span>
-                    {% endif %}
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <a href="/inbox/attachment/{{ email.id }}" 
+                           class="btn btn-secondary btn-sm attachment-link" 
+                           id="attachment-btn-{{ email.id }}"
+                           data-invoice="{{ email.invoice_number }}"
+                           data-date="{{ email.invoice_date }}">
+                            {{ email.attachment_name }}
+                        </a>
+                        {% if email.is_messy %}
+                            <span class="badge badge-warning" title="Contains messy formatting">Messy Format</span>
+                        {% endif %}
+                    </div>
                 </td>
                 <td>
-                    <a href="/inbox/attachment/{{ email.id }}" class="btn btn-primary btn-sm view-email-btn" id="view-btn-{{ email.id }}">
+                    <a href="/inbox/attachment/{{ email.id }}" class="btn btn-secondary btn-sm view-email-btn" id="view-btn-{{ email.id }}">
                         Inspect
                     </a>
                 </td>

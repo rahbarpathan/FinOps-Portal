@@ -1,27 +1,27 @@
 {% extends "base.html" %}
 
-{% block title %}Internal Finance System - Bills{% endblock %}
+{% block title %}Finance System — Bills{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1 class="page-title">Internal Accounts Payable &amp; Bills</h1>
-        <p class="page-subtitle">Official general ledger of payable liabilities awaiting disbursement.</p>
+        <h1 class="page-title">Accounts Payable &amp; Bills Ledger</h1>
+        <p class="page-subtitle">Internal general ledger of approved and pending liabilities.</p>
     </div>
     <div style="display: flex; gap: 0.75rem;">
         <a href="/bills/create" class="btn btn-primary" id="btn-create-new-bill">
-            ➕ Create New Bill
+            Create Bill
         </a>
     </div>
 </div>
 
-<div class="card" style="margin-bottom: 1.5rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <div style="display: flex; gap: 1rem; align-items: center; flex: 1;">
-            <input type="text" id="bill-search" class="form-control" placeholder="Search bills by vendor, invoice number, or status..." onkeyup="filterBills()">
+<div class="card" style="margin-bottom: 1.25rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex: 1; min-width: 260px;">
+            <input type="text" id="bill-search" class="form-control" placeholder="Search by vendor, invoice number, or status..." onkeyup="filterBills()">
         </div>
         <div>
-            <span class="badge badge-info" id="total-bills-count">{{ bills|length }} Total Recorded Bills</span>
+            <span class="badge badge-info" id="total-bills-count">{{ bills|length }} Total Bills</span>
         </div>
     </div>
 </div>
@@ -36,18 +36,18 @@
                 <th>Amount</th>
                 <th>Due Date</th>
                 <th>Status</th>
-                <th>Created At</th>
-                <th>Actions</th>
+                <th>Recorded At</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody id="bills-tbody">
             {% for bill in bills %}
             <tr class="bill-row" id="bill-row-{{ bill.id }}" data-invoice="{{ bill.invoice_number }}">
-                <td>#{{ bill.id }}</td>
+                <td style="color: var(--text-muted); font-size: 0.8125rem;">#{{ bill.id }}</td>
                 <td><strong>{{ bill.vendor }}</strong></td>
-                <td><code class="bill-invoice-code">{{ bill.invoice_number }}</code></td>
-                <td><strong style="color: var(--accent-emerald);">${{ "%.2f"|format(bill.amount) }}</strong></td>
-                <td>{{ bill.due_date }}</td>
+                <td><code style="font-family: var(--font-mono); font-size: 0.8125rem;">{{ bill.invoice_number }}</code></td>
+                <td><strong style="font-weight: 600;">${{ "%.2f"|format(bill.amount) }}</strong></td>
+                <td style="color: var(--text-secondary); font-size: 0.8125rem;">{{ bill.due_date }}</td>
                 <td>
                     {% if bill.status == 'Approved' %}
                         <span class="badge badge-approved" id="status-badge-{{ bill.id }}">{{ bill.status }}</span>
@@ -57,7 +57,7 @@
                         <span class="badge badge-pending" id="status-badge-{{ bill.id }}">{{ bill.status }}</span>
                     {% endif %}
                 </td>
-                <td style="color: var(--text-muted); font-size: 0.85rem;">{{ bill.created_at }}</td>
+                <td style="color: var(--text-muted); font-size: 0.75rem;">{{ bill.created_at }}</td>
                 <td>
                     <a href="/bills/{{ bill.id }}" class="btn btn-secondary btn-sm" id="view-bill-{{ bill.id }}">
                         View
@@ -67,7 +67,7 @@
             {% else %}
             <tr>
                 <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-                    No bills recorded yet. Use the Create Bill form or let the AI Worker submit one.
+                    No bills recorded yet.
                 </td>
             </tr>
             {% endfor %}
