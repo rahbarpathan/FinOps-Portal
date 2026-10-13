@@ -145,6 +145,38 @@ class ToolManager:
                 if txt:
                     tree_lines.append(f"  [HEADING] {txt}")
 
+        # Key Metadata / Fact fields (e.g. .fact-key with .fact-value, badges, definitions)
+        fact_elements = await self._page.query_selector_all(".fact-key")
+        for fk in fact_elements:
+            try:
+                if await fk.is_visible():
+                    key_text = (await fk.inner_text()).strip()
+                    val_text = await self._page.evaluate(
+                        """(el) => {
+                            const parent = el.parentElement;
+                            if (!parent) return '';
+                            const valEl = parent.querySelector('.fact-value, .badge, div, span:not(.fact-key)');
+                            return valEl ? valEl.innerText.trim() : '';
+                        }""",
+                        fk
+                    )
+                    if key_text and val_text:
+                        tree_lines.append(f"  [FACT] {key_text}: {val_text}")
+            except Exception:
+                pass
+
+        # Text & Document Content blocks (e.g. raw invoice texts, pre, code-box)
+        text_blocks = await self._page.query_selector_all(".code-box, pre, #raw-attachment-text")
+        for tb in text_blocks:
+            try:
+                if await tb.is_visible():
+                    content = (await tb.inner_text()).strip()
+                    if content:
+                        sample = content[:1000]
+                        tree_lines.append(f"  [ATTACHMENT_CONTENT]\n{sample}")
+            except Exception:
+                pass
+
         # Interactive elements: links, buttons, inputs, selects, textareas
         interactive_selectors = [
             ("button", "button, input[type='submit']"),
