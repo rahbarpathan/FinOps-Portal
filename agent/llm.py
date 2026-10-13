@@ -12,7 +12,7 @@ from typing import Dict, Any, List, Tuple, Optional
 TOOLS_SCHEMA = [
     {
         "name": "browser_goto",
-        "description": "Navigate the browser to a URL (e.g. 'http://localhost:8000/inbox' or 'http://localhost:8000/bills').",
+        "description": "Navigate the browser to a URL (e.g. '/inbox' for Vendor Inbox or '/bills' for Finance System).",
         "parameters": {
             "type": "object",
             "properties": {"url": {"type": "string", "description": "Target URL to navigate to"}},
@@ -482,6 +482,26 @@ class OfflineAutonomousEngine(BaseLLM):
         return ("Observing page state.", "browser_snapshot", {})
 
 
+def get_system_instruction() -> str:
+    port = os.getenv("PORT", "8000")
+    portal_base = os.getenv("PORTAL_URL", f"http://127.0.0.1:{port}").rstrip("/")
+    return (
+        "You are an autonomous AI task worker operating within the enterprise portal.\n"
+        f"Portal Base URL: {portal_base}\n\n"
+        "Key Portal Routes:\n"
+        "- Vendor Inbox (incoming emails, invoices & attachments): '/inbox'\n"
+        "- Finance System (general ledger liabilities & payment status): '/bills'\n"
+        "- Create Bill Form: '/bills/create'\n\n"
+        "Rules & Workflow:\n"
+        "1. To view vendor correspondence, latest invoices, or attachments, ALWAYS navigate to '/inbox'. (Do NOT navigate to '/invoices' or guess other URLs).\n"
+        "2. To record bills or view bills in the finance system, navigate to '/bills' or '/bills/create'.\n"
+        "3. After navigating, observe the page snapshot to locate element references ([ref=e1], [ref=e2], etc.) before clicking or typing.\n"
+        "4. Use 'remember' to record extracted facts (e.g. invoice_number, vendor, amount, due_date) into your scratchpad.\n"
+        "5. Ask operator clarification ('ask_user') ONLY when the supplier instruction is genuinely ambiguous or contradictory.\n"
+        "6. Do not guess non-existent external URLs."
+    )
+
+
 class GeminiProvider(BaseLLM):
     def __init__(self, api_key: Optional[str] = None, model: str = "gemini-2.5-flash"):
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
@@ -516,7 +536,7 @@ class GeminiProvider(BaseLLM):
                 ) for t in TOOLS_SCHEMA
             ]
             config = types.GenerateContentConfig(
-                system_instruction="You are an autonomous AI task worker. Formulate step-by-step reasoning and invoke appropriate tools to accomplish the task.",
+                system_instruction=get_system_instruction(),
                 tools=[types.Tool(function_declarations=tools_spec)],
                 temperature=0.1
             )
@@ -549,7 +569,7 @@ class OpenAIProvider(BaseLLM):
             from openai import OpenAI
             client = OpenAI(api_key=self.api_key)
             messages = [
-                {"role": "system", "content": "You are an autonomous AI task worker. Choose tools to achieve the business goal."},
+                {"role": "system", "content": get_system_instruction()},
                 {"role": "user", "content": f"MISSION: {task}\n\n{scratchpad_str}\n\nURL: {current_snapshot.get('url')}\nTREE:\n{current_snapshot.get('accessibility_tree')}\n\nHISTORY:\n{history_str}"}
             ]
             tools = [{"type": "function", "function": t} for t in TOOLS_SCHEMA]
@@ -587,7 +607,7 @@ class AnthropicProvider(BaseLLM):
                 model=self.model,
                 max_tokens=1024,
                 tools=claude_tools,
-                system="You are an autonomous AI task worker. Formulate reasoning and invoke tools.",
+                system=get_system_instruction(),
                 messages=[{"role": "user", "content": f"MISSION: {task}\n\n{scratchpad_str}\n\nURL: {current_snapshot.get('url')}\nTREE:\n{current_snapshot.get('accessibility_tree')}\n\nHISTORY:\n{history_str}"}]
             )
             thought = ""
@@ -621,7 +641,7 @@ class GroqProvider(BaseLLM):
             from openai import OpenAI
             client = OpenAI(api_key=self.api_key, base_url=self.base_url)
             messages = [
-                {"role": "system", "content": "You are an autonomous AI task worker. Formulate step-by-step reasoning and invoke appropriate tools to accomplish the task."},
+                {"role": "system", "content": get_system_instruction()},
                 {"role": "user", "content": f"MISSION: {task}\n\n{scratchpad_str}\n\nURL: {current_snapshot.get('url')}\nTREE:\n{current_snapshot.get('accessibility_tree')}\n\nHISTORY:\n{history_str}\n\nLAST ERROR: {last_error_class or 'None'}"}
             ]
             tools = [{"type": "function", "function": t} for t in TOOLS_SCHEMA]

@@ -10,6 +10,7 @@ import asyncio
 import httpx
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple
+from urllib.parse import urlparse
 from playwright.async_api import async_playwright, Browser, Page, Playwright
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -76,9 +77,36 @@ class ToolManager:
         context = await self._browser.new_context(viewport={"width": 1280, "height": 900})
         self._page = await context.new_page()
 
+    def _normalize_url(self, url: str) -> str:
+        if not url:
+            return url
+        port = os.getenv("PORT", "8000")
+        portal_base = os.getenv("PORTAL_URL", f"http://127.0.0.1:{port}").rstrip("/")
+
+        # Handle relative URLs (e.g. "/inbox", "/bills")
+        if url.startswith("/"):
+            if url in ("/invoices", "/invoice"):
+                url = "/inbox"
+            return f"{portal_base}{url}"
+
+        # Handle localhost/127.0.0.1 with wrong or default port
+        try:
+            parsed = urlparse(url)
+            if parsed.hostname in ("localhost", "127.0.0.1", "0.0.0.0"):
+                path = parsed.path or "/"
+                if path in ("/invoices", "/invoice"):
+                    path = "/inbox"
+                query = f"?{parsed.query}" if parsed.query else ""
+                return f"{portal_base}{path}{query}"
+        except Exception:
+            pass
+
+        return url
+
     # 1. browser_goto(url)
     async def browser_goto(self, url: str) -> Dict[str, Any]:
         await self.ensure_browser()
+        url = self._normalize_url(url)
         try:
             res = await self._page.goto(url, wait_until="domcontentloaded", timeout=15000)
             await asyncio.sleep(0.4)
@@ -347,6 +375,7 @@ class ToolManager:
 
     # 11. http_request(method, url, body)
     async def http_request(self, method: str, url: str, body: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        url = self._normalize_url(url)
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 m = method.upper()

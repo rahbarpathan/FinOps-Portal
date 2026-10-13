@@ -51,6 +51,11 @@ active_runs: Dict[str, Dict[str, Any]] = {}
 def index_redirect():
     return RedirectResponse(url="/inbox")
 
+@app.get("/invoices", response_class=HTMLResponse)
+@app.get("/invoice", response_class=HTMLResponse)
+def invoices_alias():
+    return RedirectResponse(url="/inbox")
+
 # ----------------- Vendor Inbox -----------------
 
 @app.get("/inbox", response_class=HTMLResponse)
