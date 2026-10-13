@@ -498,19 +498,21 @@ def get_system_instruction() -> str:
         "3. On the attachment page, read the [FACT] fields and [ATTACHMENT_CONTENT] to extract:\n"
         "   - invoice_number (e.g. INV-ACM-103 or CD-9042-X)\n"
         "   - vendor (e.g. Acme Corp or Cyberdyne Systems)\n"
-        "   - due_date (strict YYYY-MM-DD format, e.g. 2024-06-10 or 2024-07-15; parse messy strings like '15th July 2024')\n"
+        "   - due_date (strict YYYY-MM-DD format, e.g. 2024-06-10 or 2024-12-12; parse messy strings like 'December 12, 2024')\n"
         "   - amount (numeric only, e.g. 8250.00 or 14500.00; strip $ and commas)\n"
-        "4. Click 'Create Bill in Finance System' or navigate to '/bills/create'.\n"
-        "5. On the '/bills/create' form:\n"
+        "4. Policy Rule: If the invoice amount exceeds $10,000 (or payment terms require VP sign-off), call 'ask_user(kind=\"approval\", question=\"...\")'. Once operator approval is granted, proceed to create the bill.\n"
+        "5. Click 'Create Bill in Finance System' or navigate to '/bills/create'.\n"
+        "6. On the '/bills/create' form:\n"
+        "   - Do NOT navigate away or back to '/inbox'.\n"
         "   - If 'due_date' input is empty (current_val=''), call 'browser_type' with its ref to type the YYYY-MM-DD due date.\n"
         "   - If 'amount' input is empty (current_val=''), call 'browser_type' with its ref to type the numeric amount.\n"
-        "   - If 'notes' is present and there was a validation or tax requirement, type confirmation in 'notes'.\n"
+        "   - If 'notes' is present, type confirmation or payment terms in 'notes'.\n"
         "   - Once all inputs are filled, click the submit button ('submit-bill-btn' or ref like 'e6').\n"
-        "6. Call 'finish' once the bill is successfully registered in the ledger.\n\n"
+        "7. Call 'finish' once the bill is successfully registered in the ledger.\n\n"
         "Action Rules:\n"
         "- Do NOT call 'browser_snapshot' repeatedly if you are already looking at the page tree. Proceed immediately with an action ('browser_type', 'browser_click').\n"
         "- Do NOT call 'browser_goto' to the exact same URL you are already viewing.\n"
-        "- Ask operator clarification ('ask_user') ONLY when the supplier instruction is genuinely ambiguous (e.g. multiple matching invoices with identical priority)."
+        "- Ask operator clarification ('ask_user') ONLY when the supplier instruction is genuinely ambiguous."
     )
 
 
@@ -640,6 +642,7 @@ class GroqProvider(BaseLLM):
         self.api_key = api_key or os.getenv("GROQ_API_KEY")
         self.model = model or os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
         self.base_url = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+        self.fallback_engine = OfflineAutonomousEngine()
 
     def plan_next_action(
         self,
@@ -649,26 +652,57 @@ class GroqProvider(BaseLLM):
         current_snapshot: Dict[str, Any],
         last_error_class: Optional[str] = None
     ) -> Tuple[str, str, Dict[str, Any]]:
-        try:
-            from openai import OpenAI
-            client = OpenAI(api_key=self.api_key, base_url=self.base_url)
-            messages = [
-                {"role": "system", "content": get_system_instruction()},
-                {"role": "user", "content": f"MISSION: {task}\n\n{scratchpad_str}\n\nURL: {current_snapshot.get('url')}\nTREE:\n{current_snapshot.get('accessibility_tree')}\n\nHISTORY:\n{history_str}\n\nLAST ERROR: {last_error_class or 'None'}"}
-            ]
-            tools = [{"type": "function", "function": t} for t in TOOLS_SCHEMA]
-            res = client.chat.completions.create(model=self.model, messages=messages, tools=tools, temperature=0.1)
-            msg = res.choices[0].message
-            thought = msg.content or "Executing planned tool action."
-            if msg.tool_calls:
-                tc = msg.tool_calls[0]
-                args = json.loads(tc.function.arguments) if isinstance(tc.function.arguments, str) else tc.function.arguments
-                return thought, tc.function.name, args
-            return thought, "browser_snapshot", {}
-        except Exception as e:
-            fallback = OfflineAutonomousEngine()
-            thought, tool, args = fallback.plan_next_action(task, scratchpad_str, history_str, current_snapshot, last_error_class)
-            return f"[Groq API fallback: {e}] " + thought, tool, args
+        import time
+        from openai import OpenAI
+        client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+
+        # Compact accessibility tree to 1500 chars to avoid token exhaustion
+        tree_text = current_snapshot.get("accessibility_tree", "")
+        if len(tree_text) > 1500:
+            tree_text = tree_text[:1500] + "\n...[remaining tree truncated]..."
+
+        # Compact history to last 15 lines max (~last 3 steps)
+        history_lines = [l for l in history_str.strip().split("\n") if l.strip()]
+        if len(history_lines) > 15:
+            history_compact = "...[earlier steps omitted]...\n" + "\n".join(history_lines[-15:])
+        else:
+            history_compact = history_str
+
+        messages = [
+            {"role": "system", "content": get_system_instruction()},
+            {"role": "user", "content": f"MISSION: {task}\n\n{scratchpad_str}\n\nURL: {current_snapshot.get('url')}\nTREE:\n{tree_text}\n\nHISTORY:\n{history_compact}\n\nLAST ERROR: {last_error_class or 'None'}"}
+        ]
+        tools = [{"type": "function", "function": t} for t in TOOLS_SCHEMA]
+
+        models_to_try = [self.model, "openai/gpt-oss-20b"]
+        last_error = None
+
+        for m_name in models_to_try:
+            for attempt in range(3):
+                try:
+                    res = client.chat.completions.create(model=m_name, messages=messages, tools=tools, temperature=0.1)
+                    msg = res.choices[0].message
+                    thought = msg.content or "Executing planned tool action."
+                    if msg.tool_calls:
+                        tc = msg.tool_calls[0]
+                        args = json.loads(tc.function.arguments) if isinstance(tc.function.arguments, str) else tc.function.arguments
+                        return thought, tc.function.name, args
+                    
+                    # If model returned text without a tool call, consult persistent engine rather than empty snapshot
+                    thought, tool, args = self.fallback_engine.plan_next_action(task, scratchpad_str, history_str, current_snapshot, last_error_class)
+                    return thought, tool, args
+                except Exception as e:
+                    last_error = e
+                    err_str = str(e).lower()
+                    if ("429" in err_str or "rate limit" in err_str or "tpm" in err_str) and attempt < 2:
+                        delay = 1.5 * (attempt + 1)
+                        time.sleep(delay)
+                        continue
+                    break  # Try next model or fallback
+
+        # If all API attempts fail, fallback to persistent offline engine
+        thought, tool, args = self.fallback_engine.plan_next_action(task, scratchpad_str, history_str, current_snapshot, last_error_class)
+        return f"[Groq fallback: {last_error}] " + thought, tool, args
 
 
 def get_llm_engine(provider: str = "auto") -> BaseLLM:

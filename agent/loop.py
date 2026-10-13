@@ -227,12 +227,52 @@ class AgentLoop:
                         "text": f"User Prompt [{kind.upper()}]: {q}",
                         "code": json.dumps(tool_args, indent=2)
                     })
-                    result = {"success": True, "status": "paused_waiting_for_user", "question": q}
-                    if kind == "clarification":
+                    
+                    if kind == "approval":
+                        self.approvals_count += 1
+                        approved = False
+                        if self.is_cli:
+                            try:
+                                ans = input(f"\n[!] Human approval required: {q} [y/N]: ").strip().lower()
+                                approved = ans in ("y", "yes")
+                            except Exception:
+                                approved = False
+                        elif self.event_queue:
+                            from env.app import active_runs
+                            loop = asyncio.get_running_loop()
+                            fut = loop.create_future()
+                            if self.run_id in active_runs:
+                                active_runs[self.run_id]["approval_future"] = fut
+                            await self._emit("approval_request", {
+                                "request": {
+                                    "tool": "ask_user",
+                                    "args": tool_args,
+                                    "reason": q,
+                                    "details": tool_args
+                                }
+                            })
+                            try:
+                                approved = await asyncio.wait_for(fut, timeout=120.0)
+                            except asyncio.TimeoutError:
+                                approved = False
+
+                        if approved:
+                            result = {"success": True, "status": "approved", "response": "Operator approved: You are authorized to proceed and record this bill."}
+                            self.policy.auto_approve = True  # Prevent secondary block on subsequent submit button click
+                        else:
+                            result = {"success": False, "status": "rejected", "response": "Operator rejected authorization. Do not create this bill."}
+                            final_status = "rejected"
+                            final_summary = f"Operator rejected authorization: {q}"
+                            success = False
+                            break
+                    elif kind == "clarification":
+                        result = {"success": True, "status": "paused_waiting_for_user", "question": q}
                         final_status = "verified"
                         final_summary = f"Clarification required: {q}"
                         success = True
                         break
+                    else:
+                        result = {"success": True, "status": "answered", "question": q}
 
                 elif tool_name == "verify":
                     crit = tool_args.get("criterion", "")
