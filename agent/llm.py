@@ -193,7 +193,10 @@ class OfflineAutonomousEngine(BaseLLM):
     Dynamically maps goals, snapshot trees, scratchpad memory, and error classes
     to next tool calls across all 5 evaluation tasks without hardcoding.
     """
-    def __init__(self, portal_base: str = "http://localhost:8000"):
+    def __init__(self, portal_base: Optional[str] = None):
+        if portal_base is None:
+            port = os.getenv("PORT", "8000")
+            portal_base = os.getenv("PORTAL_URL", f"http://localhost:{port}").rstrip("/")
         self.portal_base = portal_base
         self.internal_state: Dict[str, Any] = {}
 
@@ -600,17 +603,57 @@ class AnthropicProvider(BaseLLM):
             return f"[Anthropic API fallback: {e}] " + thought, tool, args
 
 
+class GroqProvider(BaseLLM):
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
+        self.api_key = api_key or os.getenv("GROQ_API_KEY")
+        self.model = model or os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+        self.base_url = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+
+    def plan_next_action(
+        self,
+        task: str,
+        scratchpad_str: str,
+        history_str: str,
+        current_snapshot: Dict[str, Any],
+        last_error_class: Optional[str] = None
+    ) -> Tuple[str, str, Dict[str, Any]]:
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+            messages = [
+                {"role": "system", "content": "You are an autonomous AI task worker. Formulate step-by-step reasoning and invoke appropriate tools to accomplish the task."},
+                {"role": "user", "content": f"MISSION: {task}\n\n{scratchpad_str}\n\nURL: {current_snapshot.get('url')}\nTREE:\n{current_snapshot.get('accessibility_tree')}\n\nHISTORY:\n{history_str}\n\nLAST ERROR: {last_error_class or 'None'}"}
+            ]
+            tools = [{"type": "function", "function": t} for t in TOOLS_SCHEMA]
+            res = client.chat.completions.create(model=self.model, messages=messages, tools=tools, temperature=0.1)
+            msg = res.choices[0].message
+            thought = msg.content or "Executing planned tool action."
+            if msg.tool_calls:
+                tc = msg.tool_calls[0]
+                args = json.loads(tc.function.arguments) if isinstance(tc.function.arguments, str) else tc.function.arguments
+                return thought, tc.function.name, args
+            return thought, "browser_snapshot", {}
+        except Exception as e:
+            fallback = OfflineAutonomousEngine()
+            thought, tool, args = fallback.plan_next_action(task, scratchpad_str, history_str, current_snapshot, last_error_class)
+            return f"[Groq API fallback: {e}] " + thought, tool, args
+
+
 def get_llm_engine(provider: str = "auto") -> BaseLLM:
     """Factory to instantiate LLM provider with fallback to offline autonomous engine."""
     provider = provider.lower()
-    if provider == "gemini" and os.getenv("GEMINI_API_KEY"):
+    if provider == "groq" and os.getenv("GROQ_API_KEY"):
+        return GroqProvider()
+    elif provider == "gemini" and os.getenv("GEMINI_API_KEY"):
         return GeminiProvider()
     elif provider == "openai" and os.getenv("OPENAI_API_KEY"):
         return OpenAIProvider()
     elif provider == "anthropic" and os.getenv("ANTHROPIC_API_KEY"):
         return AnthropicProvider()
     elif provider == "auto":
-        if os.getenv("GEMINI_API_KEY"):
+        if os.getenv("GROQ_API_KEY"):
+            return GroqProvider()
+        elif os.getenv("GEMINI_API_KEY"):
             return GeminiProvider()
         elif os.getenv("OPENAI_API_KEY"):
             return OpenAIProvider()

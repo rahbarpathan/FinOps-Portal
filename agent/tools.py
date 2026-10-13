@@ -50,7 +50,13 @@ class ToolManager:
 
         self._playwright = await async_playwright().start()
         exec_path = self._get_executable_path()
-        launch_args = ["--disable-blink-features=AutomationControlled"]
+        launch_args = [
+            "--disable-blink-features=AutomationControlled",
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu"
+        ]
 
         try:
             if exec_path:
@@ -65,7 +71,7 @@ class ToolManager:
                     args=launch_args
                 )
         except Exception:
-            self._browser = await self._playwright.chromium.launch(headless=self.headless)
+            self._browser = await self._playwright.chromium.launch(headless=self.headless, args=launch_args)
 
         context = await self._browser.new_context(viewport={"width": 1280, "height": 900})
         self._page = await context.new_page()

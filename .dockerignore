@@ -1,0 +1,17 @@
+.git
+.github
+.venv
+env/__pycache__
+agent/__pycache__
+tasks/__pycache__
+tests/__pycache__
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.vscode
+.idea
+runs/*.jsonl
+runs/*.md
+.env

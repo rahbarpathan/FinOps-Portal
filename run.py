@@ -74,11 +74,11 @@ async def run_cli_task(task_text: str, provider: str = "auto", auto_approve: boo
 
 def main():
     parser = argparse.ArgumentParser(description="CentrAlign AI FinOps Portal & Autonomous Agent Runner")
-    parser.add_argument("--host", default="127.0.0.1", help="Server host")
-    parser.add_argument("--port", type=int, default=8000, help="Server port")
+    parser.add_argument("--host", default=os.getenv("HOST", "0.0.0.0"), help="Server host")
+    parser.add_argument("--port", type=int, default=int(os.getenv("PORT", "8000")), help="Server port")
     parser.add_argument("--cli", nargs="?", const="Find the latest invoice from Acme Corp, extract the amount and due date, enter it into the finance system, and tell me once it's done.", help="Run in CLI mode with optional task prompt")
     parser.add_argument("--task", choices=["1", "2", "3", "4", "5"], help="Run a specific benchmark evaluation task number (1-5)")
-    parser.add_argument("--provider", default="auto", choices=["auto", "gemini", "openai", "anthropic", "offline"], help="LLM Provider")
+    parser.add_argument("--provider", default="auto", choices=["auto", "groq", "gemini", "openai", "anthropic", "offline"], help="LLM Provider")
     parser.add_argument("--auto-approve", action="store_true", help="Auto-approve sensitive side-effect actions (for headless/eval runs)")
     parser.add_argument("--reset", action="store_true", help="Force reset of deterministic seed data")
 

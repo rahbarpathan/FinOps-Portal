@@ -16,7 +16,11 @@ class IndependentVerifier:
     Independent outcome verification engine.
     STRICTLY ISOLATED: Only accesses ground-truth state, never shared with the acting loop.
     """
-    def __init__(self, ground_truth_url: str = "http://localhost:8000/api/ground-truth"):
+    def __init__(self, ground_truth_url: Optional[str] = None):
+        if ground_truth_url is None:
+            port = os.getenv("PORT", "8000")
+            base = os.getenv("PORTAL_URL", f"http://localhost:{port}").rstrip("/")
+            ground_truth_url = f"{base}/api/ground-truth"
         self.ground_truth_url = ground_truth_url
         self.recorded_checks: List[Dict[str, Any]] = []
 
